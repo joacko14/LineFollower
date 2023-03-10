@@ -20,50 +20,61 @@ bool start = false;
 int a = 0;
 
 // motor control
-void motor(char action, int Speed)
+void motor(char action, int Speed, float CorrectionLeft, float CorrectionRight)
 {
+  // Motor A - Izquierdo
+  // Motor B - derecho
   if (action == 'F')
-  { // forward
-    analogWrite(enA, Speed);
-    analogWrite(enB, Speed);
+  { // Forward
+    // Left motor
+    analogWrite(enA, Speed * CorrectionLeft);
     digitalWrite(in1A, LOW);
-    digitalWrite(in2A, HIGH);
-    digitalWrite(in3B, HIGH);
+    digitalWrite(in2A, HIGH); // Forward
+    // Right motor
+    analogWrite(enB, Speed * CorrectionRight);
+    digitalWrite(in3B, HIGH); // Forward
     digitalWrite(in4B, LOW);
   }
   else if (action == 'B')
-  { // backward
-    analogWrite(enA, Speed);
-    analogWrite(enB, Speed);
-    digitalWrite(in1A, HIGH);
+  { // Backward
+    // Left motor
+    analogWrite(enA, Speed * CorrectionLeft);
+    digitalWrite(in1A, HIGH); // Backward
     digitalWrite(in2A, LOW);
+    // Right motor
+    analogWrite(enB, Speed * CorrectionRight);
     digitalWrite(in3B, LOW);
-    digitalWrite(in4B, HIGH);
+    digitalWrite(in4B, HIGH); // Backward
   }
   else if (action == 'L')
-  { // turnleft
-    analogWrite(enA, Speed);
-    analogWrite(enB, Speed);
-    digitalWrite(in1A, HIGH);
+  { // Turn left
+    // Left motor
+    analogWrite(enA, Speed * CorrectionLeft);
+    digitalWrite(in1A, HIGH); // Backward
     digitalWrite(in2A, LOW);
-    digitalWrite(in3B, HIGH);
+    // Right motor
+    analogWrite(enB, Speed * CorrectionRight);
+    digitalWrite(in3B, HIGH); // Forward
     digitalWrite(in4B, LOW);
   }
   else if (action == 'R')
-  { // turnright
-    analogWrite(enA, Speed);
-    analogWrite(enB, Speed);
+  { // Turn right
+    // Left motor
+    analogWrite(enA, Speed * CorrectionLeft);
     digitalWrite(in1A, LOW);
-    digitalWrite(in2A, HIGH);
+    digitalWrite(in2A, HIGH); // Forward
+    // Right motor
+    analogWrite(enB, Speed * CorrectionRight);
     digitalWrite(in3B, LOW);
-    digitalWrite(in4B, HIGH);
+    digitalWrite(in4B, HIGH); // Backward
   }
   else if (action == 'S')
   { // stop
     analogWrite(enA, 0);
-    analogWrite(enB, 0);
     digitalWrite(in1A, LOW);
     digitalWrite(in2A, LOW);
+
+    analogWrite(enB, 0);
     digitalWrite(in3B, LOW);
     digitalWrite(in4B, LOW);
   }
@@ -71,14 +82,15 @@ void motor(char action, int Speed)
 
 void test()
 {
-  motor('F', 180);
+  motor('F', 255, 0.85, 1);
   delay(2000);
-  motor('B', 180);
+  motor('B', 255, 1, 1);
   delay(2000);
-  motor('R', 180);
+  motor('R', 255, 1, 1);
   delay(2000);
-  motor('L', 180);
+  motor('L', 255, 1, 1);
   delay(2000);
+  motor('S', 0, 0, 0);
 }
 
 void setup()
@@ -99,7 +111,7 @@ void setup()
   pinMode(irir, INPUT);
   pinMode(irer, INPUT);
 
-  // test();
+  test();
   Serial.println("Setup OK");
 }
 
@@ -112,7 +124,7 @@ void loop()
   S3 = digitalRead(iril); // sensor one
   S4 = digitalRead(irel); // sensor one
 
-  delay(50);
+  // delay(200);
   Serial.print(S1);
   Serial.print(" - ");
   Serial.print(S2);
@@ -121,24 +133,14 @@ void loop()
   Serial.print(" - ");
   Serial.println(S4);
 
-  if (S1 == 0 && S2 == 1 && S3 == 1 && S4 == 0)
-  {
-    motor('F', 200);
-  }
-  else if (S1 == 1 && S2 == 1 && S3 == 1 && S4 == 1)
-  {
-    motor('S', 200);
-  }
-  else if (S1 == 0 && S2 == 0 && S3 == 0 && S4 == 0)
-  {
-    motor('S', 200);
-  }
-  else if (S1 == 1 && S2 == 1 && S3 == 0 && S4 == 0)
-  {
-    motor('R', 200);
-  }
-  else if (S1 == 0 && S2 == 0 && S3 == 1 && S4 == 1)
-  {
-    motor('L', 200);
-  }
+  if (S1 && S2 && S3 && S4)
+    motor('S', 0, 0, 0);
+  if (!S1 && !S2 && !S3 && !S4)
+    motor('S', 0, 0, 0);
+  if (!S1 && S2 && S3 && !S4)
+    motor('F', 200, 0.85, 1);
+  if ((S1 && !S2 && !S3 && !S4) || (S1 && S2 && !S3 && !S4))
+    motor('R', 200, 0.85, 0);
+  if ((!S1 && !S2 && !S3 && S4) || (!S1 && !S2 && S3 && S4))
+    motor('L', 200, 0, 1);
 }
